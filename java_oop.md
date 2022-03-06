@@ -278,7 +278,108 @@ printArray(stringArray);
 **缺点：** 增加安全问题，比如会无视泛型参数的安全检查（编译时）。另外，性能稍差。
 2. Spring框架大量使用了动态代理，动态代理的实现也依赖于反射
 
+***
 
+### 注解
+
+可以看作一种特殊的注释，主要用于修饰类、方法或者变量
+本质是一个继承了Annotation的特殊接口
+
+注解只有被解析之后才会生效，常见解析方法：
++ 编译器直接扫描：编译代码时扫描对应注解并处理。比如@Override
+
++ 运行期通过反射处理：框架自带的注解（Spring的@Value、@Component）都是反射来处理的
 
 ***
 
+### Exception和Error
+
+1. 异常
+
+   共同父类——Throwable类
+
+   + Exception：程序本身可以处理的异常，可以通过`catch`捕获，分为Checked Exception（受检查异常，必须处理）和Unchecked Exception（不受检查异常，可以不处理）
+   + Error：程序无法处理的错误，无法通过`catch`捕获，如Java虚拟机运行错误（Virtual MachineError）、虚拟机内存不够（OutOfMemoryError）、类定义错误（NoClassDefFoundError）。这些错误发生时，JVM一般会选择线程终止。
+
+2. 受检查异常和不受检查异常区别
+    没有被catch/throw处理则无法通过编译，除了RuntimeException及其子类，其他Exception类及其子类都是受检查异常。
+
+2. Throwable类常用方法
+
+  + String getMessage() ：异常发生的简要描述
+  + String toString()：异常发生的详细信息
+  + String getLocalizedMessage()：异常本地化信息。使用子类可以重写这个方法，若未重写则结果与getMessage一样
+
+2. try-catch-finally
+
+  + 无论是否捕获到异常，finally都会执行。若try或catch中有return语句，finally会在方法返回前执行。
+  + **不要在finally中使用return**：当try和finally都有return时，try中return返回值会暂存在一个本地变量中，执行到finally中的return后，这个本地变量的值就变成了finally中的return返回值。
+  + finally之前虚拟机被终止运行时，finally中的代码不会执行。
+
+2. try-with-resources
+
+  + Java 7新特性
+  + 所有实现了java.lang.AutoCloseable接口的类都可以在其中使用
+
+  ```java
+  try (BufferedInputStream bin = new BufferedInputStream(new FileInputStream(new File("test.txt")));
+               BufferedOutputStream bout = new BufferedOutputStream(new FileOutputStream(new File("out.txt")))) {
+              int b;
+              while ((b = bin.read()) != -1) {
+                  bout.write(b);
+              }
+          }
+          catch (IOException e) {
+              e.printStackTrace();
+          }
+  ```
+
+***
+
+### I/O
+
+1. 序列化和反序列化
+
+   + 序列化：将数据结构或对象转换为二进制字节流的过程。（**主要目的是通过网络传输对象或将对象存储到文件系统、数据库、内存中**）
+   + 反序列化：将在序列化过程中生成的二进制字节流转换为数据结构或对象的过程
+   
+2. transient
+
+   阻止实例中用此关键字修饰的变量序列化；当对象被反序列化时，被transient修饰的变量值不会被持久化和恢复。
+
+   + 只能修饰变量，不能修饰类和方法
+   + 如果修饰的int类型，反序列化后结果就是0（默认值）
+
+3. 键盘输入两种方法
+
+   + Scanner
+
+     ```java
+     Scanner input = new Scanner(System.in);
+     String s  = input.nextLine();
+     input.close();
+     ```
+
+   + BufferedReader
+
+     ```java
+     BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
+     String s = input.readLine();
+     ```
+
+4. IO流划分
+
+   + 流的流向：输入流、输出流
+   + 操作单元：字节流、字符流
+   + 流的角色：节点流、处理流
+
+   IO流的40多个类都是从四个抽象类基类中派生出的：
+
+   + InputStream/Reader：所有输入流的基类，前者是字节输入流，后者是字符输入流
+   + OutputStream/Writer：所有输出流的基类，前者是字节输出流，后者是字符输出流
+
+5. 字符流作用
+
+   **不管是文件读写还是网络发送接收，信息最小存储单元都是字节，为什么还要有字符流呢?**
+
+   + 字符流有JVM将字节流转换得到的，这个过程非常耗时，若不注意编码类型还会出现乱码问题。因此IO流提供了直接操作字符的接口，方便直接对字符操作
